@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -8,10 +7,9 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var log = require("winston").loggers.get("app:server");
-
+var exphbs = require('express-handlebars')
 var config = require("app/config");
 var middleware = require("app/middleware");
-
 var app = express();
 
 var mongoURL = 'mongodb://' + config.mongodb.host + '/' + config.mongodb.port;
@@ -24,9 +22,14 @@ mongoose.connect(mongoURL, function(err, res) {
   }
 });
 
+app.use(express.static(__dirname + "/../public"))
+
 // view engine setup
-app.set('views', path.join(__dirname, 'site'));
-app.set('view engine', 'hbs');
+app.engine('handlebars', exphbs({
+  defaultLayout: 'main', layoutsDir: __dirname + "/views/layouts"
+}));
+app.set('views', __dirname + '/views');
+app.set('view engine', 'handlebars');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
@@ -38,7 +41,8 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 
 [
-  "app/site/routes"
+  "app/middleware/routes",
+  "app/project/routes"
 ].forEach(function(routePath) {
   require(routePath)(app);
 });
@@ -55,5 +59,5 @@ app.listen(config.express.port, config.express.ip, function(error) {
   if (error) {
     process.exit(10);
   }
-  log.info("Starting server!");
+  log.info("Starting server! Listening on port " + config.express.port);
 });
